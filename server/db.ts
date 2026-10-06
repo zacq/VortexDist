@@ -1,4 +1,6 @@
 import { neon, Pool, types } from "@neondatabase/serverless";
+import { getConnectionString } from "@netlify/database";
+import { HttpError } from "./http";
 import { migrate } from "./schema";
 
 // Money is numeric(14,2) and counts may be bigint: return JS numbers. Dates stay "YYYY-MM-DD" strings
@@ -22,9 +24,15 @@ export interface Db extends Queryable {
   exec(sql: string): Promise<void>;
 }
 
-// Netlify DB (Neon) sets NETLIFY_DATABASE_URL; DATABASE_URL works for any other Postgres host.
+// Built-in Netlify Database exposes its URL through getConnectionString() (NETLIFY_DB_URL), pointing at the
+// right branch for production or a deploy preview. NETLIFY_DATABASE_URL is the legacy Neon extension;
+// DATABASE_URL works for any other Postgres host.
 function connectionString(): string | undefined {
-  return process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL;
+  try {
+    return getConnectionString();
+  } catch {
+    return process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL;
+  }
 }
 
 function neonDb(url: string): Db {
@@ -95,8 +103,10 @@ export function getDb(): Promise<Db> {
   if (!instance) {
     instance = (async () => {
       const url = connectionString();
-      if (!url && process.env.NETLIFY && process.env.CONTEXT) {
-        throw new Error("No database configured. Enable Netlify DB or set DATABASE_URL.");
+      // Deployed functions run on Lambda with a read-only filesystem, so the local PGlite fallback can't work there.
+      const deployed = Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME) && process.env.NETLIFY_DEV !== "true";
+      if (!url && deployed) {
+        throw new HttpError(503, "No database is connected. In Netlify, open Data & storage → Database, create a database, then redeploy.", "NO_DATABASE");
       }
       const db = url ? neonDb(url) : await pgliteDb();
       await migrate(db);

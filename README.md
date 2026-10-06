@@ -10,7 +10,7 @@ with VAT and excise calculated on every sale. The front end follows the design p
 | --- | --- | --- |
 | Front end | React 19 + TypeScript + Tailwind 4 (Vite) | Matches the design prototype; about 70 KB gzipped on first load |
 | API | One Netlify Function (`netlify/functions/api.mts`), served at `/api/*` | No server to run; scales to zero |
-| Database | Postgres: Netlify DB (Neon) in production, embedded PGlite locally | Netlify has no persistent disk; PGlite is real Postgres, so local and production behave the same |
+| Database | Postgres: built-in Netlify Database (`@netlify/database`) in production, embedded PGlite locally | Netlify has no persistent disk; PGlite is real Postgres, so local and production behave the same |
 | Backups | Scheduled function (`daily-backup.mts`) writing JSON snapshots to Netlify Blobs | Covers the PRD's "daily backup" quality bar |
 
 ## Layout
@@ -46,8 +46,9 @@ backend work, point `DATABASE_URL` at a Neon dev branch instead.
 
 1. Push this folder to a Git repository and import it in Netlify (or run `npx netlify init`).
    Build settings come from `netlify.toml`: `npm run build`, publish `dist`, functions in `netlify/functions`.
-2. Add a database: **Extensions → Netlify DB** (provisions Neon and sets `NETLIFY_DATABASE_URL`),
-   or set `DATABASE_URL` to any Postgres connection string.
+2. Add a database: **Data & storage → Database → Create a database manually** (Netlify Database needs a
+   credit-based plan). The app reads it via `getConnectionString()`; `DATABASE_URL` also works for any
+   other Postgres host.
 3. Set `OWNER_NAME`, `OWNER_PHONE` and `OWNER_INITIAL_PIN` under **Site configuration → Environment variables**
    before the first deploy. They are only used when the database is first created.
 4. Deploy. Migrations run on the first API request; check `https://<site>/api/health`.
