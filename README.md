@@ -29,18 +29,21 @@ tests/        tax.test.ts (PRD worked numbers), api.test.ts (handler against PGl
 
 ```bash
 npm install
-npm run dev          # netlify dev on http://localhost:8888 (Vite + functions)
-npm test             # tax engine + API tests
+npm run dev          # netlify dev on http://localhost:8888 (Vite + functions + local Postgres)
+npm run seed:demo    # optional: load the brief's mock data (with netlify dev running)
+npm test             # tax engine, API and dashboard tests
 ```
 
-Without `DATABASE_URL`, data is kept in `.data/pglite`. The first request runs migrations and creates
-the Owner account from `OWNER_PHONE` / `OWNER_INITIAL_PIN` (defaults `0700000001` / `1234`).
-That PIN must be changed at first sign-in.
+`netlify dev` runs a local Netlify Database (data in `.netlify/db`). The first request runs migrations and
+creates the Owner account from `OWNER_PHONE` / `OWNER_INITIAL_PIN` (defaults `0700000001` / `1234`);
+that PIN must be changed at first sign-in. `seed:demo` adds the brief's customers, invoices, payments,
+stock and stamps, plus users `0700000002`–`05` (Accountant, Sales, Store, Dispatch) with PIN `1234`.
+It only ever writes to a local database.
 
-PGlite allows only one process per data folder. `netlify dev` reloads the function when server code changes
-and can open the folder twice, which corrupts it ("Please REINDEX"). After editing `server/`, restart
-`netlify dev`; if the store is corrupted, delete `.data/` (it's rebuilt on the next request). For sustained
-backend work, point `DATABASE_URL` at a Neon dev branch instead.
+Tests (and `npm run seed:demo` when `netlify dev` is not running) use an embedded PGlite store in `.data/`.
+
+The database driver comes from `@netlify/database`: Neon over HTTP/WebSocket when deployed, plain `pg`
+locally. `DATABASE_URL` points the app at any other Postgres.
 
 ## Deploy to Netlify
 
@@ -67,7 +70,8 @@ Each API request is one function invocation. Write transactions open a short-liv
 | Sign-in (phone + PIN), sessions, profile switching, PIN change, permission matrix, audit log helper | Done |
 | App shell, per-profile navigation, More menu, route guards | Done |
 | Daily backup function | Done |
-| Modules 1–7 (customers & credit, prices, purchases, production, stock register, invoicing & dispatch, dashboard & tax) and the 9 reports | Next — screens show "Module not built yet" |
+| Owner dashboard: all 8 widgets, period switch, offline copy, tested against seeded records | Done |
+| Modules 1–6 (customers & credit, prices, purchases, production, stock register, invoicing & dispatch), tax summary screen and the 9 reports | Next — screens show "Module not built yet" |
 
 ## Open items carried from PRD v2
 

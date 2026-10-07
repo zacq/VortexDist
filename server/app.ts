@@ -2,11 +2,13 @@ import { bearerToken, userForToken } from "./auth";
 import { getDb } from "./db";
 import { HttpError, json, Router, type Context } from "./http";
 import { registerAuth } from "./modules/auth";
+import { registerDashboard } from "./modules/dashboard";
 import { registerReference } from "./modules/reference";
 
 const router = new Router();
 registerAuth(router);
 registerReference(router);
+registerDashboard(router);
 
 // Requests arrive either as /api/... (local tools) or /.netlify/functions/api/... (Netlify rewrite).
 function apiPath(url: URL): string {

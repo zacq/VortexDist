@@ -4,6 +4,7 @@ import { SkeletonRows } from "./components/common";
 import { canOpen, profileNavigation, resolveScreen } from "./config/navigation";
 import { navigate, usePath } from "./router";
 import { AccountScreen } from "./screens/AccountScreen";
+import { DashboardScreen } from "./screens/dashboard/DashboardScreen";
 import { LoginScreen } from "./screens/LoginScreen";
 import { MoreScreen } from "./screens/MoreScreen";
 import { ForbiddenScreen, NotFoundScreen, PendingScreen } from "./screens/PendingScreen";
@@ -36,6 +37,7 @@ export default function App() {
   else if (special === "account") content = <AccountScreen />;
   else if (!resolved) content = <NotFoundScreen />;
   else if (!canOpen(user.profile, resolved.key)) content = <ForbiddenScreen />;
+  else if (resolved.key === "dashboard") content = <DashboardScreen />;
   else content = <PendingScreen screen={resolved.key} />;
 
   const changeProfile = async (profile: typeof user.profile) => {
